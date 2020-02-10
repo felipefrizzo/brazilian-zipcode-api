@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/felipefrizzo/brazilian-zipcode-api/handlers"
+	"github.com/felipefrizzo/brazilian-zipcode-api/internals/handlers"
 )
 
 // Server struct has router and db instances
