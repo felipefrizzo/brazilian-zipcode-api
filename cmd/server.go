@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/handlers"
+	"github.com/gorilla/mux"
 )
 
 // Server struct has router and db instances
@@ -22,6 +22,7 @@ func (s *Server) Initialize() {
 // Set all required routers
 func (s *Server) setRouters() {
 	s.Router.HandleFunc("/", handlers.HomeHandler).Methods("GET")
+	s.Router.HandleFunc("/zipcode/{zipcode:[0-9]+}", handlers.ZipcodeHandler).Methods("GET")
 }
 
 // Run the app on it's router
