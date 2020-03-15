@@ -14,7 +14,8 @@ type mongoConfig struct {
 }
 
 type config struct {
-	Mongo mongoConfig
+	Mongo       mongoConfig
+	CorreiosURL string
 }
 
 // Config values collect from environment variables
@@ -28,4 +29,5 @@ func init() {
 	}
 
 	Config.Mongo = mongo
+	Config.CorreiosURL = "https://apps.correios.com.br/SigepMasterJPA/AtendeClienteService/AtendeCliente?wsdl"
 }
