@@ -6,8 +6,9 @@ An API for Brazilian postal codes, where will be available to consult the addres
 
 - [x] Consult the address by zipcode.
 - [ ]  Calculate the shipping service.
-- [ ]  Make unit tests.
 - [ ]  Add cache to handlers.
+- [ ]  Make unit tests.
+- [ ]  Improve return errors.
 
 ## License
 
