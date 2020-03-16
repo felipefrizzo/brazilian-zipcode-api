@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/middleware"
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/models"
@@ -17,13 +16,7 @@ func ZipcodeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var params map[string]string = mux.Vars(r)
 	var address models.Address
-
-	zipcode, err := strconv.Atoi(params["zipcode"])
-	if err != nil {
-		log.Printf("ZIPCODE_HANDLER_ERROR - Error to convert the zipcode parameter - %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+	var zipcode string = params["zipcode"]
 
 	session, err := middleware.MongoConnection()
 	if err != nil {

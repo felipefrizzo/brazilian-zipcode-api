@@ -19,7 +19,7 @@ const body string = `
    <soapenv:Header/>
    <soapenv:Body>
       <cli:consultaCEP>
-         <cep>%d</cep>
+         <cep>%s</cep>
       </cli:consultaCEP>
    </soapenv:Body>
 </soapenv:Envelope>
@@ -38,16 +38,16 @@ type Address struct {
 	Neighborhood   string        `json:"neighborhood" bson:"neighborhood" xml:"bairro"`
 	AddressName    string        `json:"address_name" bson:"address_name" xml:"end"`
 	Complement     string        `json:"complement" bson:"complement" xml:"complemento2"`
-	Zipcode        int32         `json:"zipcode" bson:"zipcode" xml:"cep"`
+	Zipcode        string        `json:"zipcode" bson:"zipcode" xml:"cep"`
 	CreatedAt      time.Time     `json:"created_at" bson:"created_at"`
 	UpdatedAt      time.Time     `json:"updated_at" bson:"updated_at"`
 }
 
 // AddressIsUpdated this function is responsible to get the current address and validate if is updated
 // based on UpdatedAt and Correios data
-func (a *Address) AddressIsUpdated(zipcode int) error {
-	if a.Zipcode != 0 {
-		zipcode = int(a.Zipcode)
+func (a *Address) AddressIsUpdated(zipcode string) error {
+	if a.Zipcode != "" {
+		zipcode = a.Zipcode
 	}
 
 	c, err := getAddressByZipcodeCorreios(zipcode)
@@ -56,7 +56,7 @@ func (a *Address) AddressIsUpdated(zipcode int) error {
 		return fmt.Errorf("Correios API error - %v", err)
 	}
 
-	if a.Zipcode == 0 {
+	if a.Zipcode == "" {
 		log.Printf("ADDRESS_VALIDATE_INFO - Inserting a new address")
 
 		a.FederativeUnit = c.FederativeUnit
@@ -85,7 +85,7 @@ func (a *Address) AddressIsUpdated(zipcode int) error {
 	return nil
 }
 
-func getAddressByZipcodeCorreios(zipcode int) (*Address, error) {
+func getAddressByZipcodeCorreios(zipcode string) (*Address, error) {
 	var soap SOAPResponse
 	var URL string = configs.Config.CorreiosURL
 
