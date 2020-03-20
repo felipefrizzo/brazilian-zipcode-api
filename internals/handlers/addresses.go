@@ -14,6 +14,8 @@ import (
 // ZipcodeHandler function for returns the address corresponding to the zipcode
 func ZipcodeHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	var params map[string]string = mux.Vars(r)
 	var address models.Address
 	var zipcode string = params["zipcode"]
@@ -26,8 +28,7 @@ func ZipcodeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	session.DB("zipcode").C("addresses").Find(bson.M{"zipcode": zipcode}).One(&address)
-	err = address.AddressIsUpdated(zipcode)
-	if err != nil {
+	if err := address.AddressIsUpdated(zipcode); err != nil {
 		log.Printf("ZIPCODE_HANDLER_ERROR - Invalid address - %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return

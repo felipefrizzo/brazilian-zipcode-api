@@ -23,8 +23,7 @@ var Config config
 
 func init() {
 	mongo := mongoConfig{}
-	err := env.Parse(&mongo)
-	if err != nil {
+	if err := env.Parse(&mongo); err != nil {
 		panic(fmt.Errorf("Error to collect mongo environment values. Error: %s", err))
 	}
 
