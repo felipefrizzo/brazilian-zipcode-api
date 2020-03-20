@@ -1,0 +1,22 @@
+version: '3.1'
+services:
+  mongo:
+    image: mongo
+    environment: 
+      MONGO_INITDB_ROOT_USERNAME: zipcode
+      MONGO_INITDB_ROOT_PASSWORD: zipcode
+      MONGO_INITDB_DATABASE: zipcode
+    ports:
+      - 27017:27017
+  zipcode:
+    image: felipefrizzo/brazilian-zipcode-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment: 
+      MONGO_HOST: "mongo:27017"
+      MONGO_USERNAME: zipcode 
+      MONGO_PASSWORD: zipcode 
+      MONGO_DATABASE: admin
+    ports:
+      - 8000:8000
