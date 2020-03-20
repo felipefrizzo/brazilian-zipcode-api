@@ -1,10 +1,10 @@
-package main 
+package main
 
 import (
-	"github.com/felipefrizzo/brazilian-zipcode-api/cmd"
+	server "github.com/felipefrizzo/brazilian-zipcode-api/cmd"
 )
 
-func main()  {
+func main() {
 	server := &server.Server{}
 	server.Initialize()
 	server.Run(":8000")
