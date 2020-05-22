@@ -65,7 +65,10 @@ func (a *Address) AddressIsUpdated(zipcode string) error {
 		a.Zipcode = c.Zipcode
 		a.CreatedAt = time.Now().UTC()
 		a.UpdatedAt = time.Now().UTC()
-	} else if a.UpdatedAt.Before(sevenDaysAgo) {
+
+		return nil
+	}
+	if a.UpdatedAt.Before(sevenDaysAgo) {
 		a.FederativeUnit = c.FederativeUnit
 		a.City = c.City
 		a.Neighborhood = c.Neighborhood

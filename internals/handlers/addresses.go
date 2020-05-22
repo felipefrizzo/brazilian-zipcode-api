@@ -21,12 +21,12 @@ func ZipcodeHandler(w http.ResponseWriter, r *http.Request) {
 	var zipcode string = params["zipcode"]
 
 	session, err := middleware.MongoConnection()
-	defer session.Close()
 	if err != nil {
 		log.Printf("ZIPCODE_HANDLER_ERROR - Error to close connection with MongoDB - %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+	defer session.Close()
 
 	session.DB("zipcode").C("addresses").Find(bson.M{"zipcode": zipcode}).One(&address)
 	if err := address.AddressIsUpdated(zipcode); err != nil {
