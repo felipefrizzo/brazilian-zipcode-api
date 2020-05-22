@@ -22,7 +22,6 @@ func (s *Server) Initialize() {
 // Set all required routers
 func (s *Server) setRouters() {
 	s.Router.Use(mux.CORSMethodMiddleware(s.Router))
-	s.Router.HandleFunc("/", handlers.HomeHandler).Methods("GET")
 	s.Router.HandleFunc("/zipcode/{zipcode:[0-9]+}", handlers.ZipcodeHandler).Methods("GET")
 }
 
