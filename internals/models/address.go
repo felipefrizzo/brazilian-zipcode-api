@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/felipefrizzo/brazilian-zipcode-api/internals/abstract"
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/configs"
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/helpers"
 	"gopkg.in/mgo.v2/bson"
@@ -32,7 +31,7 @@ type SOAPResponse struct {
 
 // Address struct has information from brazilian addresses
 type Address struct {
-	ID             bson.ObjectId `json:"_id,omitempty" bson:"_id,omitempty"`
+	ID             bson.ObjectId `json:"-" bson:"_id,omitempty"`
 	FederativeUnit string        `json:"federative_unit" bson:"federative_unit" xml:"uf"`
 	City           string        `json:"city" bson:"city" xml:"cidade"`
 	Neighborhood   string        `json:"neighborhood" bson:"neighborhood" xml:"bairro"`
@@ -46,19 +45,18 @@ type Address struct {
 // AddressIsUpdated this function is responsible to get the current address and validate if is updated
 // based on UpdatedAt and Correios data
 func (a *Address) AddressIsUpdated(zipcode string) error {
-	if a.Zipcode != "" {
-		zipcode = a.Zipcode
+	var sevenDaysAgo time.Time = time.Now().UTC().AddDate(0, 0, -7)
+	if a.Zipcode != "" && a.UpdatedAt.After(sevenDaysAgo) {
+		return nil
 	}
 
-	c, err := getAddressByZipcodeCorreios(zipcode)
+	c, err := fetchCorreiosAddress(zipcode)
 	if err != nil {
-		log.Printf("ADDRESS_VALIDATE_ERROR - Something goes wrong with Correios API - %v", err)
-		return fmt.Errorf("Correios API error - %v", err)
+		log.Printf("ADDRESS_VALIDATE_ERROR - Error for fetching data from correios API - %v", err)
+		return fmt.Errorf("Error for fetching data from correios API - %v", err)
 	}
 
 	if a.Zipcode == "" {
-		log.Printf("ADDRESS_VALIDATE_INFO - Inserting a new address")
-
 		a.FederativeUnit = c.FederativeUnit
 		a.City = c.City
 		a.Neighborhood = c.Neighborhood
@@ -67,12 +65,7 @@ func (a *Address) AddressIsUpdated(zipcode string) error {
 		a.Zipcode = c.Zipcode
 		a.CreatedAt = time.Now().UTC()
 		a.UpdatedAt = time.Now().UTC()
-	}
-
-	sevenDaysAgo := time.Now().UTC().AddDate(0, 0, -7)
-	if a.UpdatedAt.Before(sevenDaysAgo) {
-		log.Printf("ADDRESS_VALIDATE_INFO - The current address is outdated")
-
+	} else if a.UpdatedAt.Before(sevenDaysAgo) {
 		a.FederativeUnit = c.FederativeUnit
 		a.City = c.City
 		a.Neighborhood = c.Neighborhood
@@ -85,11 +78,11 @@ func (a *Address) AddressIsUpdated(zipcode string) error {
 	return nil
 }
 
-func getAddressByZipcodeCorreios(zipcode string) (*Address, error) {
+func fetchCorreiosAddress(zipcode string) (*Address, error) {
 	var soap SOAPResponse
 	var URL string = configs.Config.CorreiosURL
 
-	response, err := abstract.RequestXML(URL, body, []interface{}{zipcode})
+	response, err := helpers.RequestXML(URL, body, []interface{}{zipcode})
 	if err != nil {
 		return nil, err
 	}
