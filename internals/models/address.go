@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -24,9 +25,21 @@ const body string = `
 </soapenv:Envelope>
 `
 
-// SOAPResponse struct has information to parse xml return
-type SOAPResponse struct {
+// ErrAddressNotFound returns if address was not found
+// ErrAddressInvalid returns if zip code sent is invalid
+var (
+	ErrAddressNotFound = errors.New("Address not found")
+	ErrAddressInvalid  = errors.New("The informed zip code is invalid")
+	zipNotFound        = "CEP NAO ENCONTRADO"
+	zipInvalid         = "CEP INVÁLIDO"
+)
+
+type soapResponse struct {
 	Address Address `xml:"Body>consultaCEPResponse>return"`
+}
+
+type soapResponseError struct {
+	FaultError string `xml:"Body>Fault>faultstring"`
 }
 
 // Address struct has information from brazilian addresses
@@ -42,62 +55,84 @@ type Address struct {
 	UpdatedAt      time.Time     `json:"updated_at" bson:"updated_at"`
 }
 
-// AddressIsUpdated this function is responsible to get the current address and validate if is updated
-// based on UpdatedAt and Correios data
-func (a *Address) AddressIsUpdated(zipcode string) error {
-	var sevenDaysAgo time.Time = time.Now().UTC().AddDate(0, 0, -7)
-	if a.Zipcode != "" && a.UpdatedAt.After(sevenDaysAgo) {
-		return nil
-	}
-
+// Create this function create address if doesn't exists
+func (a *Address) Create(zipcode string) error {
 	c, err := fetchCorreiosAddress(zipcode)
 	if err != nil {
-		log.Printf("ADDRESS_VALIDATE_ERROR - Error for fetching data from correios API - %v", err)
-		return fmt.Errorf("Error for fetching data from correios API - %v", err)
+		log.Printf("ADDRESS_CREATE_ERROR - %v", err)
+		return err
 	}
 
-	if a.Zipcode == "" {
-		a.FederativeUnit = c.FederativeUnit
-		a.City = c.City
-		a.Neighborhood = c.Neighborhood
-		a.AddressName = c.AddressName
-		a.Complement = c.Complement
-		a.Zipcode = c.Zipcode
-		a.CreatedAt = time.Now().UTC()
-		a.UpdatedAt = time.Now().UTC()
+	a.FederativeUnit = c.FederativeUnit
+	a.City = c.City
+	a.Neighborhood = c.Neighborhood
+	a.AddressName = c.AddressName
+	a.Complement = c.Complement
+	a.Zipcode = c.Zipcode
+	a.CreatedAt = time.Now().UTC()
+	a.UpdatedAt = time.Now().UTC()
 
-		return nil
+	return nil
+}
+
+// IsUpdated returns if the address is older than 7 days
+func (a *Address) IsUpdated() bool {
+	var sevenDaysAgo time.Time = time.Now().UTC().AddDate(0, 0, -7)
+	return a.UpdatedAt.After(sevenDaysAgo)
+}
+
+// Update this function update address if outdated
+func (a *Address) Update() error {
+	c, err := fetchCorreiosAddress(a.Zipcode)
+	if err != nil {
+		log.Printf("ADDRESS_UPDATE_ERROR - %v", err)
+		return err
 	}
-	if a.UpdatedAt.Before(sevenDaysAgo) {
-		a.FederativeUnit = c.FederativeUnit
-		a.City = c.City
-		a.Neighborhood = c.Neighborhood
-		a.AddressName = c.AddressName
-		a.Complement = c.Complement
-		a.Zipcode = c.Zipcode
-		a.UpdatedAt = time.Now().UTC()
-	}
+
+	a.FederativeUnit = c.FederativeUnit
+	a.City = c.City
+	a.Neighborhood = c.Neighborhood
+	a.AddressName = c.AddressName
+	a.Complement = c.Complement
+	a.Zipcode = c.Zipcode
+	a.UpdatedAt = time.Now().UTC()
 
 	return nil
 }
 
 func fetchCorreiosAddress(zipcode string) (*Address, error) {
-	var soap SOAPResponse
+	var soap soapResponse
 	var URL string = configs.Config.CorreiosURL
 
 	response, err := helpers.RequestXML(URL, body, []interface{}{zipcode})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error for fetching data from correios API. %v", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
+		var soapError soapResponseError
+
+		data, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return nil, fmt.Errorf("Error to read request body. %v", err)
+		}
+
+		xml.Unmarshal(helpers.ISO8859ToUTF8(data), &soapError)
+		if soapError.FaultError == zipNotFound {
+			return nil, ErrAddressNotFound
+		}
+
+		if soapError.FaultError == zipInvalid {
+			return nil, ErrAddressInvalid
+		}
+
 		return nil, fmt.Errorf("Status code: %v", response.StatusCode)
 	}
 
 	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error to read request body. %v", err)
 	}
 
 	xml.Unmarshal(helpers.ISO8859ToUTF8(data), &soap)
