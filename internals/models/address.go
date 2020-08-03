@@ -37,6 +37,7 @@ var (
 )
 
 type (
+	// AddressInterface interface that exports the model methods
 	AddressInterface interface {
 		Create(zipcode string) error
 		IsUpdated() bool

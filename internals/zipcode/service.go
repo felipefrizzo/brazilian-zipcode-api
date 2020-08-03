@@ -47,6 +47,7 @@ func (z *zipcode) FetchAddressByZipcode(zipcode string) (*models.Address, error)
 
 	if !address.IsUpdated() {
 		if err := address.Update(); err != nil {
+			z.MongoSession.DB("zipcode").C("addresss").Remove(bson.M{"_id": address.ID})
 			return nil, err
 		}
 
