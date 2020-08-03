@@ -14,46 +14,56 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const body string = `
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cli="http://cliente.bean.master.sigep.bsb.correios.com.br/">
-   <soapenv:Header/>
-   <soapenv:Body>
-      <cli:consultaCEP>
-         <cep>%s</cep>
-      </cli:consultaCEP>
-   </soapenv:Body>
-</soapenv:Envelope>
-`
+const (
+	body string = `
+		<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cli="http://cliente.bean.master.sigep.bsb.correios.com.br/">
+			<soapenv:Header/>
+			<soapenv:Body>
+				<cli:consultaCEP>
+					<cep>%s</cep>
+				</cli:consultaCEP>
+			</soapenv:Body>
+		</soapenv:Envelope>
+	`
+	zipcodeNotFound string = "CEP NAO ENCONTRADO"
+	zipcodeInvalid  string = "CEP INVÁLIDO"
+)
 
 // ErrAddressNotFound returns if address was not found
 // ErrAddressInvalid returns if zip code sent is invalid
 var (
 	ErrAddressNotFound = errors.New("Address not found")
 	ErrAddressInvalid  = errors.New("The informed zip code is invalid")
-	zipNotFound        = "CEP NAO ENCONTRADO"
-	zipInvalid         = "CEP INVÁLIDO"
 )
 
-type soapResponse struct {
-	Address Address `xml:"Body>consultaCEPResponse>return"`
-}
+type (
+	AddressInterface interface {
+		Create(zipcode string) error
+		IsUpdated() bool
+		Update(zipcode string) error
+	}
 
-type soapResponseError struct {
-	FaultError string `xml:"Body>Fault>faultstring"`
-}
+	soapResponse struct {
+		Address Address `xml:"Body>consultaCEPResponse>return"`
+	}
 
-// Address struct has information from brazilian addresses
-type Address struct {
-	ID             bson.ObjectId `json:"-" bson:"_id,omitempty"`
-	FederativeUnit string        `json:"federative_unit" bson:"federative_unit" xml:"uf"`
-	City           string        `json:"city" bson:"city" xml:"cidade"`
-	Neighborhood   string        `json:"neighborhood" bson:"neighborhood" xml:"bairro"`
-	AddressName    string        `json:"address_name" bson:"address_name" xml:"end"`
-	Complement     string        `json:"complement" bson:"complement" xml:"complemento2"`
-	Zipcode        string        `json:"zipcode" bson:"zipcode" xml:"cep"`
-	CreatedAt      time.Time     `json:"created_at" bson:"created_at"`
-	UpdatedAt      time.Time     `json:"updated_at" bson:"updated_at"`
-}
+	soapResponseError struct {
+		FaultError string `xml:"Body>Fault>faultstring"`
+	}
+
+	// Address struct has information from brazilian addresses
+	Address struct {
+		ID             bson.ObjectId `json:"-" bson:"_id,omitempty"`
+		FederativeUnit string        `json:"federative_unit" bson:"federative_unit" xml:"uf"`
+		City           string        `json:"city" bson:"city" xml:"cidade"`
+		Neighborhood   string        `json:"neighborhood" bson:"neighborhood" xml:"bairro"`
+		AddressName    string        `json:"address_name" bson:"address_name" xml:"end"`
+		Complement     string        `json:"complement" bson:"complement" xml:"complemento2"`
+		Zipcode        string        `json:"zipcode" bson:"zipcode" xml:"cep"`
+		CreatedAt      time.Time     `json:"created_at" bson:"created_at"`
+		UpdatedAt      time.Time     `json:"updated_at" bson:"updated_at"`
+	}
+)
 
 // Create this function create address if doesn't exists
 func (a *Address) Create(zipcode string) error {
@@ -119,11 +129,11 @@ func fetchCorreiosAddress(zipcode string) (*Address, error) {
 		}
 
 		xml.Unmarshal(helpers.ISO8859ToUTF8(data), &soapError)
-		if soapError.FaultError == zipNotFound {
+		if soapError.FaultError == zipcodeNotFound {
 			return nil, ErrAddressNotFound
 		}
 
-		if soapError.FaultError == zipInvalid {
+		if soapError.FaultError == zipcodeInvalid {
 			return nil, ErrAddressInvalid
 		}
 
