@@ -9,10 +9,10 @@ services:
     ports:
       - 27017:27017
   zipcode:
-    image: felipefrizzo/brazilian-zipcode-api:dev
+    image: felipefrizzo/brazilian-zipcode-api:latest
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     depends_on:
       - mongo
     environment: 
@@ -20,7 +20,5 @@ services:
       MONGO_USERNAME: zipcode 
       MONGO_PASSWORD: zipcode 
       MONGO_DATABASE: admin
-    volumes:
-      - .:/go/src/github.com/felipefrizzo/brazilian-zipcode-api
     ports:
       - 8000:8000

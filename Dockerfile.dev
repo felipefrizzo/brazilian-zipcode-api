@@ -1,0 +1,9 @@
+FROM golang:alpine AS builder
+
+WORKDIR $GOPATH/src/github.com/felipefrizzo/brazilian-zipcode-api
+RUN apk add --update --no-cache ca-certificates git \
+  && go get -u github.com/cosmtrek/air
+
+COPY . $GOPATH/src/github.com/felipefrizzo/brazilian-zipcode-api
+RUN go mod download
+CMD [ "/go/bin/air" ]
