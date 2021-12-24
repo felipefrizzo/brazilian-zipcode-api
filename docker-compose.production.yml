@@ -16,9 +16,6 @@ services:
     depends_on:
       - mongo
     environment: 
-      MONGO_HOST: "mongo:27017"
-      MONGO_USERNAME: zipcode 
-      MONGO_PASSWORD: zipcode 
-      MONGO_DATABASE: admin
+      MONGO_URI: "mongodb://zipcode:zipcode@mongo:27017/admin"
     ports:
       - 8000:8000
