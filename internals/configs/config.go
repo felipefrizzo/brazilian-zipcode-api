@@ -3,14 +3,11 @@ package configs
 import (
 	"fmt"
 
-	"github.com/caarlos0/env"
+	"github.com/caarlos0/env/v6"
 )
 
 type mongoConfig struct {
-	Host     string `env:"MONGO_HOST" envDefault:"mongo"`
-	Username string `env:"MONGO_USERNAME"`
-	Password string `env:"MONGO_PASSWORD"`
-	Database string `env:"MONGO_DATABASE"`
+	MongoURI string `env:"MONGO_URI" envDefault:"mongodb://localhost:27017"`
 }
 
 type config struct {

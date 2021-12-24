@@ -1,22 +1,24 @@
 package middleware
 
 import (
+	"context"
 	"time"
 
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/configs"
-	"gopkg.in/mgo.v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // MongoConnection open connection with mongodb
-func MongoConnection() (*mgo.Session, error) {
+func MongoConnection() (*mongo.Client, context.Context, error) {
 	config := configs.Config.Mongo
 
-	mongo := &mgo.DialInfo{
-		Addrs:    []string{config.Host},
-		Timeout:  60 * time.Second,
-		Database: config.Database,
-		Username: config.Username,
-		Password: config.Password,
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoURI))
+	if err != nil {
+		return nil, nil, err
 	}
-	return mgo.DialWithInfo(mongo)
+
+	return client, ctx, nil
 }

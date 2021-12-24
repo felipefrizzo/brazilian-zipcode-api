@@ -1,19 +1,23 @@
 package server
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/middleware"
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/zipcode"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"gopkg.in/mgo.v2"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Server struct has router and db instances
 type Server struct {
-	Router *mux.Router
-	Mongo  *mgo.Session
+	Router       *mux.Router
+	Mongo        *mongo.Client
+	MongoContext context.Context
 }
 
 // Initialize initializer server with predefined configuration
@@ -29,9 +33,9 @@ func (s *Server) Initialize() {
 func (s *Server) InitializeMongo() {
 	var err error
 
-	s.Mongo, err = middleware.MongoConnection()
+	s.Mongo, s.MongoContext, err = middleware.MongoConnection()
 	if err != nil {
-		log.Printf("ZIPCODE_GET_ERROR - Error to close connection with MongoDB - %v", err)
+		log.Printf("Error to close connection with MongoDB %v", err)
 		panic("Error to close connection with MongoDB")
 	}
 }
@@ -47,5 +51,6 @@ func (s *Server) InitializeZipcode() {
 
 // Run the app on it's router
 func (s *Server) Run(host string) {
-	log.Fatal(http.ListenAndServe(host, s.Router))
+	router := handlers.LoggingHandler(os.Stdout, s.Router)
+	log.Fatal(http.ListenAndServe(host, router))
 }

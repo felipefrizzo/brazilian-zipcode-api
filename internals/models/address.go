@@ -5,13 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/configs"
 	"github.com/felipefrizzo/brazilian-zipcode-api/internals/helpers"
-	"gopkg.in/mgo.v2/bson"
+	bson "go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -54,7 +53,7 @@ type (
 
 	// Address struct has information from brazilian addresses
 	Address struct {
-		ID             bson.ObjectId `json:"-" bson:"_id,omitempty"`
+		ID             bson.ObjectID `json:"-" bson:"_id,omitempty"`
 		FederativeUnit string        `json:"federative_unit" bson:"federative_unit" xml:"uf"`
 		City           string        `json:"city" bson:"city" xml:"cidade"`
 		Neighborhood   string        `json:"neighborhood" bson:"neighborhood" xml:"bairro"`
@@ -70,7 +69,6 @@ type (
 func (a *Address) Create(zipcode string) error {
 	c, err := fetchCorreiosAddress(zipcode)
 	if err != nil {
-		log.Printf("ADDRESS_CREATE_ERROR - %v", err)
 		return err
 	}
 
@@ -96,7 +94,6 @@ func (a *Address) IsUpdated() bool {
 func (a *Address) Update() error {
 	c, err := fetchCorreiosAddress(a.Zipcode)
 	if err != nil {
-		log.Printf("ADDRESS_UPDATE_ERROR - %v", err)
 		return err
 	}
 
