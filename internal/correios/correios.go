@@ -78,9 +78,6 @@ func (c *correios) GetAddressByZipcode(ctx context.Context, zipcode string) (*ad
 		if err := xml.Unmarshal(helpers.ISO8859ToUTF8(body), &soapError); err != nil {
 			return nil, errs.NewWithCause("failed to unmarshal SOAP error", err)
 		}
-		fmt.Println("***********")
-		fmt.Println(soapError)
-		fmt.Println("***********")
 
 		if soapError.FaultError == zipcodeNotFound {
 			return nil, errs.NewWithCause("zipcode not found", errors.New(soapError.FaultError))
