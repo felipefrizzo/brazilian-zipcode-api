@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"time"
 
 	"github.com/felipefrizzo/brazilian-zipcode-api/internal/address"
@@ -25,8 +26,12 @@ type client struct {
 }
 
 // NewClient creates a new address redis client.
-func NewClient(addr, username, password string, db int, correiosService correios.Correios) address.AddressRepository {
-	fmt.Printf("about to connect on redis addr: %s on db: %d\n", addr, db)
+func NewClient(addr, username, password string, db int, correiosService correios.Correios, cacheTTL string) (address.AddressRepository, error) {
+	ttl, err := strconv.Atoi(cacheTTL)
+	if err != nil {
+		return nil, errs.Wrap(err)
+	}
+
 	return &client{
 		redis: redis.NewClient(&redis.Options{
 			Addr:     addr,
@@ -34,10 +39,10 @@ func NewClient(addr, username, password string, db int, correiosService correios
 			Password: password,
 			DB:       db,
 		}),
-		ttl: time.Hour,
+		ttl: time.Duration(ttl) * time.Second,
 
 		correiosService: correiosService,
-	}
+	}, nil
 }
 
 func (c *client) getAndCreate(ctx context.Context, zipcode string) (*address.Address, error) {

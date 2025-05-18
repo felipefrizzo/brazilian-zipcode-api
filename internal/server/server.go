@@ -73,7 +73,17 @@ func createServices(cfg *config.Config) (*handlerServices, error) {
 			return nil, errs.Wrap(err)
 		}
 
-		addrService = redis.NewClient(fmt.Sprintf("%s:%s", cfg.DatabaseURL, cfg.DatabasePort), cfg.DatabaseUsername, cfg.DatabasePassword, int(db), correiosService)
+		addrService, err = redis.NewClient(
+			fmt.Sprintf("%s:%s", cfg.DatabaseURL, cfg.DatabasePort),
+			cfg.DatabaseUsername,
+			cfg.DatabasePassword,
+			int(db),
+			correiosService,
+			cfg.CacheTTL,
+		)
+		if err != nil {
+			return nil, errs.Wrap(err)
+		}
 	default:
 		return nil, errs.Newf("unsupported database driver: %s", cfg.DatabaseDriver)
 	}

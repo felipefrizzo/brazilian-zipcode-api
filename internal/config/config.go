@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/richardwilkes/toolbox/errs"
@@ -10,7 +9,9 @@ import (
 )
 
 const (
-	correiosURl = "https://apps.correios.com.br/SigepMasterJPA/AtendeClienteService/AtendeCliente?wsdl"
+	defaultPort     = "8080"
+	correiosURL     = "https://apps.correios.com.br/SigepMasterJPA/AtendeClienteService/AtendeCliente?wsdl"
+	defaultCacheTTL = "3600"
 )
 
 // Config represents the application configuration.
@@ -25,12 +26,13 @@ type Config struct {
 	DatabaseName     string `mapstructure:"database_name"`
 	DatabaseUsername string `mapstructure:"database_username"`
 	DatabasePassword string `mapstructure:"database_password"`
+
+	CacheTTL string `mapstructure:"cache_ttl_seconds"`
 }
 
 // New creates a new config instance.
 func New() (*Config, error) {
 	viper.SetEnvPrefix("APP")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	if _, err := os.Stat(".env"); err == nil {
@@ -41,8 +43,9 @@ func New() (*Config, error) {
 		}
 	}
 
-	viper.SetDefault("port", "8080")
-	viper.SetDefault("correios.url", correiosURl)
+	viper.SetDefault("port", defaultPort)
+	viper.SetDefault("correios_url", correiosURL)
+	viper.SetDefault("cache_ttl_seconds", defaultCacheTTL)
 
 	var result map[string]any
 	var config Config
